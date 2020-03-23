@@ -6,7 +6,6 @@ public class RequestPacket implements Serializable {
     private String fileName;
     private String pathOnServer;
     private long fileLength;
-
     public RequestPacket(String userName){
         this.userName = userName;
         this.fileName = null;

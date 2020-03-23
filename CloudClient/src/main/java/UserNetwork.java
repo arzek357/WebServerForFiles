@@ -24,50 +24,57 @@ public class UserNetwork {
     }
 
     public void connect() {
-            try{
-                socket = new Socket("localhost",8189);
-                oeos = new ObjectEncoderOutputStream(socket.getOutputStream());
-                odis = new ObjectDecoderInputStream(socket.getInputStream(),100 * 1024 * 1024);
-                startSynchronize();
-                startReadingThread();
-            } catch (Exception e){
-                e.printStackTrace();
-                System.out.println("Невозможно подключиться к серверу!");
-            }
+        determineSocketAndStreams();
+        startSynchronize();
+        startReadingThread();
     }
-    private void startSynchronize() throws IOException, ClassNotFoundException {
+    private void startSynchronize(){
+        try {
             RequestPacket userInfoPacket = new RequestPacket(userName);
             oeos.writeObject(userInfoPacket);
             oeos.flush();
             int number = (int) odis.readObject();
-            while (controller.getServerFiles().size()<number){
-                RequestPacket obj= (RequestPacket) odis.readObject();
-                controller.getServerFiles().add(new FilePacket(obj.getFileName(),obj.getFileLength(),obj.getPathOnServer()));
+            while (controller.getServerFiles().size() < number) {
+                RequestPacket obj = (RequestPacket) odis.readObject();
+                controller.getServerFiles().add(new FilePacket(obj.getFileName(), obj.getFileLength(), obj.getPathOnServer()));
             }
             controller.initListInServerTableView();
+        } catch (IOException e){
+            e.printStackTrace();
+            System.out.println("Невозможно обновить данные серверного хранилища");
+        } catch (ClassNotFoundException e){
+            e.printStackTrace();
+            System.out.println("Ошибка при передачи данных о серверном хранилище");
+        }
     }
-    private void startReadingThread() throws InterruptedException {
+    private void startReadingThread(){
         Thread readThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                while (true){
-                    try {
+                try {
+                    while (true) {
                         Object msg = odis.readObject();
-                        if (msg instanceof SendPacket){
-                            File clientFile = new File("CloudClient\\src\\main\\resources\\" + userName+"\\"+((SendPacket) msg).getFileName());
-                            Files.write(clientFile.toPath(),((SendPacket) msg).getFileByteArr());
+                        if (msg instanceof SendPacket) {
+                            File clientFile = new File("CloudClient\\src\\main\\resources\\" + userName + "\\" + ((SendPacket) msg).getFileName());
+                            Files.write(clientFile.toPath(), ((SendPacket) msg).getFileByteArr());
                             controller.getClientFiles().add(new FilePacket(clientFile));
                             controller.initListInLocalTableView();
                         }
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        e.printStackTrace();
                     }
+                } catch (IOException e){
+                    System.out.println("Поток чтения прекратил свою работу в связи с разрывом соединения");
+                } catch (ClassNotFoundException e){
+                    System.out.println("Ошибка чтения данных сервера");
+                    e.printStackTrace();
                 }
             }
         });
-        readThread.join();
+        try {
+            readThread.join();
+        } catch (InterruptedException e){
+            System.out.println("Поток чтения был прерван.");
+            e.printStackTrace();
+        }
         readThread.setDaemon(true);
         readThread.start();
     }
@@ -90,5 +97,14 @@ public class UserNetwork {
     void downloadFileFromServer(FilePacket file) throws IOException {
         oeos.writeObject(new SendPacket(file.getFileName().toString()));
         oeos.flush();
+    }
+    private void determineSocketAndStreams(){
+        try {
+            socket = new Socket("localhost", 8189);
+            oeos = new ObjectEncoderOutputStream(socket.getOutputStream());
+            odis = new ObjectDecoderInputStream(socket.getInputStream(), 100 * 1024 * 1024);
+        } catch (IOException e){
+            System.out.println("Невозможно подключиться к серверу!");
+        }
     }
 }

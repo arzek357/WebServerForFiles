@@ -1,3 +1,4 @@
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -9,6 +10,7 @@ import javafx.scene.control.cell.PropertyValueFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class FXMLMainController {
@@ -30,9 +32,13 @@ public class FXMLMainController {
     private TableColumn<FilePacket,Long> serverFileLength;
 
     @FXML
-    public void pressDownloadButton(ActionEvent event) throws IOException {
+    public void pressDownloadButton(ActionEvent event){
         FilePacket fileToDownload = serverFilesTable.getSelectionModel().getSelectedItem();
+        try{
         userNetwork.downloadFileFromServer(fileToDownload);
+        } catch (IOException e){
+            System.out.println("Произошла ошибка при скачивании файла!");
+        }
     }
     @FXML
     public void pressServerRefreshButton(ActionEvent event) throws IOException {
@@ -40,13 +46,23 @@ public class FXMLMainController {
     }
     @FXML
     public void pressLocalRefreshButton(ActionEvent event) throws IOException {
+        localFilesTable.getItems().removeAll(clientFiles);
+        checkLocalDirectory();
         initListInLocalTableView();
+    }
+    @FXML
+    public void pressLocalDeleteButton(ActionEvent event) throws IOException {
+        FilePacket fileToDownload = localFilesTable.getSelectionModel().getSelectedItem();
+        Files.delete(fileToDownload.getFile().toPath());
+        clientFiles.remove(fileToDownload);
+        localFilesTable.getColumns().remove(fileToDownload);
     }
     public void setUserNetwork(UserNetwork userNetwork){
         this.userNetwork = userNetwork;
     }
     public void startConnection() {
         checkLocalDirectory();
+        initListInLocalTableView();
         userNetwork.setController(this);
         userNetwork.connect();
     }
@@ -59,9 +75,11 @@ public class FXMLMainController {
             File[] arrFiles = file.listFiles();
             if (arrFiles!=null){
                 for (File k:arrFiles){
-                    clientFiles.add(new FilePacket(k));
+                    FilePacket ks = new FilePacket(k);
+                    if(!clientFiles.contains(ks)){
+                    clientFiles.add(ks);
+                    }
                 }
-                initListInLocalTableView();
             }
             else{
                 return;
