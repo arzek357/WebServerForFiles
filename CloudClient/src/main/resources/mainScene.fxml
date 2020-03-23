@@ -15,7 +15,7 @@
         <buttons>
             <Button mnemonicParsing="false" text="Скачать файл" onAction="#pressDownloadButton" />
             <Button mnemonicParsing="false" text="Удалить файл" />
-            <Button mnemonicParsing="false" text="Обновить" />
+            <Button mnemonicParsing="false" text="Обновить" onAction="#pressServerRefreshButton"/>
         </buttons>
       </ButtonBar>
       <TableView fx:id="localFilesTable" layoutX="34.0" layoutY="72.0" prefHeight="301.0" prefWidth="336.0" >
@@ -28,7 +28,7 @@
          <buttons>
             <Button mnemonicParsing="false" text="Отправить файл" />
             <Button mnemonicParsing="false" text="Удалить файл" />
-            <Button mnemonicParsing="false" text="Обновить" />
+            <Button mnemonicParsing="false" text="Обновить" onAction="#pressLocalRefreshButton"/>
          </buttons>
       </ButtonBar>
       <TableView fx:id="serverFilesTable" layoutX="405.0" layoutY="72.0" prefHeight="301.0" prefWidth="292.0">

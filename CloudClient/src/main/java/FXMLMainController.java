@@ -34,15 +34,21 @@ public class FXMLMainController {
         FilePacket fileToDownload = serverFilesTable.getSelectionModel().getSelectedItem();
         userNetwork.downloadFileFromServer(fileToDownload);
     }
-
+    @FXML
+    public void pressServerRefreshButton(ActionEvent event) throws IOException {
+        initListInServerTableView();
+    }
+    @FXML
+    public void pressLocalRefreshButton(ActionEvent event) throws IOException {
+        initListInLocalTableView();
+    }
     public void setUserNetwork(UserNetwork userNetwork){
         this.userNetwork = userNetwork;
     }
     public void startConnection() {
         checkLocalDirectory();
-        userNetwork.connect();
         userNetwork.setController(this);
-        userNetwork.setServerFiles(serverFiles);
+        userNetwork.connect();
     }
     private void checkLocalDirectory() {
         File file = new File("CloudClient\\src\\main\\resources\\"+userNetwork.getUserName());
@@ -62,18 +68,26 @@ public class FXMLMainController {
             }
         }
     }
-    private void initListInLocalTableView(){
+    public void initListInLocalTableView(){
         localFileName.setCellValueFactory(new PropertyValueFactory<>("fileName"));
         localFileLength.setCellValueFactory(new PropertyValueFactory<>("fileLength"));
         localFilesTable.setItems(clientFiles);
     }
-    public void initListInServerTableView(ObservableList<FilePacket> serverStorage){
+    public void initListInServerTableView(){
         serverFileName.setCellValueFactory(new PropertyValueFactory<>("fileName"));
         serverFileLength.setCellValueFactory(new PropertyValueFactory<>("fileLength"));
-        serverFilesTable.setItems(serverStorage);
+        serverFilesTable.setItems(serverFiles);
     }
 
     public UserNetwork getUserNetwork() {
         return userNetwork;
+    }
+
+    public ObservableList<FilePacket> getClientFiles() {
+        return clientFiles;
+    }
+
+    public ObservableList<FilePacket> getServerFiles() {
+        return serverFiles;
     }
 }
