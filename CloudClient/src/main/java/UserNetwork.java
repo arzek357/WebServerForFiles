@@ -25,26 +25,15 @@ public class UserNetwork {
 
     public void connect() {
         determineSocketAndStreams();
-        startSynchronize();
         startReadingThread();
     }
-    private void startSynchronize(){
+    private void determineSocketAndStreams(){
         try {
-            RequestPacket userInfoPacket = new RequestPacket(userName);
-            oeos.writeObject(userInfoPacket);
-            oeos.flush();
-            int number = (int) odis.readObject();
-            while (controller.getServerFiles().size() < number) {
-                RequestPacket obj = (RequestPacket) odis.readObject();
-                controller.getServerFiles().add(new FilePacket(obj.getFileName(), obj.getFileLength(), obj.getPathOnServer()));
-            }
-            controller.initListInServerTableView();
+            socket = new Socket("localhost", 8189);
+            oeos = new ObjectEncoderOutputStream(socket.getOutputStream());
+            odis = new ObjectDecoderInputStream(socket.getInputStream(), 100 * 1024 * 1024);
         } catch (IOException e){
-            e.printStackTrace();
-            System.out.println("Невозможно обновить данные серверного хранилища");
-        } catch (ClassNotFoundException e){
-            e.printStackTrace();
-            System.out.println("Ошибка при передачи данных о серверном хранилище");
+            System.out.println("Невозможно подключиться к серверу!");
         }
     }
     private void startReadingThread(){
@@ -52,6 +41,9 @@ public class UserNetwork {
             @Override
             public void run() {
                 try {
+                    RequestPacket userInfoPacket = new RequestPacket(userName);
+                    oeos.writeObject(userInfoPacket);
+                    oeos.flush();
                     while (true) {
                         Object msg = odis.readObject();
                         if (msg instanceof SendPacket) {
@@ -59,6 +51,13 @@ public class UserNetwork {
                             Files.write(clientFile.toPath(), ((SendPacket) msg).getFileByteArr());
                             controller.getClientFiles().add(new FilePacket(clientFile));
                             controller.initListInLocalTableView();
+                        }
+                        if (msg instanceof RequestPacket){
+                            controller.getServerFiles().removeAll();
+                            for (File s:((RequestPacket) msg).getFiles()){
+                                controller.getServerFiles().add(new FilePacket(s));
+                            }
+                            controller.initListInServerTableView();
                         }
                     }
                 } catch (IOException e){
@@ -78,10 +77,10 @@ public class UserNetwork {
         readThread.setDaemon(true);
         readThread.start();
     }
-    public void setController(FXMLMainController controller) {
+    void setController(FXMLMainController controller) {
         this.controller = controller;
     }
-    public void disconnect(){
+    void disconnect(){
         disconnect(socket,oeos,odis);
     }
     private void disconnect(Socket socket,ObjectEncoderOutputStream oeos,ObjectDecoderInputStream odis) {
@@ -94,17 +93,40 @@ public class UserNetwork {
             System.out.println("При отключении от сервера произошла ошибка.");
         }
     }
-    void downloadFileFromServer(FilePacket file) throws IOException {
-        oeos.writeObject(new SendPacket(file.getFileName().toString()));
-        oeos.flush();
-    }
-    private void determineSocketAndStreams(){
+    void downloadFileFromServer(FilePacket file) {
         try {
-            socket = new Socket("localhost", 8189);
-            oeos = new ObjectEncoderOutputStream(socket.getOutputStream());
-            odis = new ObjectDecoderInputStream(socket.getInputStream(), 100 * 1024 * 1024);
+            oeos.writeObject(new SendPacket(file.getFileName().toString()));
+            oeos.flush();
         } catch (IOException e){
-            System.out.println("Невозможно подключиться к серверу!");
+            System.out.println("Произашла ошибка при поптыке скачивания файла "+file.getFileName().toString()+" с сервера!");
+            e.printStackTrace();
+        }
+    }
+    void refreshFilesFromServer() {
+        try{
+        oeos.writeObject(new RequestPacket(userName));
+        oeos.flush();
+        } catch (IOException e){
+            System.out.println("Произошла ошибка при попытке обновить данные сервера!");
+            e.printStackTrace();
+        }
+    }
+    void deleteFileFromServer(FilePacket file){
+        try {
+            oeos.writeObject(new InstructionForServer(file.getFileName().toString(),"delete"));
+            oeos.flush();
+        } catch (IOException e){
+            System.out.println("Произошла ошибка при попытке удаления файла "+file.getFileName().toString());
+            e.printStackTrace();
+        }
+    }
+    void sendFileToServer(FilePacket file){
+        try {
+            oeos.writeObject(new SendPacket(file.getFileName().toString(),Files.readAllBytes(file.getFile().toPath())));
+            oeos.flush();
+        } catch (IOException e){
+            System.out.println("Произошла ошибка при отправке файла "+file.getFileName().toString());
+            e.printStackTrace();
         }
     }
 }

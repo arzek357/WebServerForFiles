@@ -1,4 +1,3 @@
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -32,35 +31,49 @@ public class FXMLMainController {
     private TableColumn<FilePacket,Long> serverFileLength;
 
     @FXML
-    public void pressDownloadButton(ActionEvent event){
-        FilePacket fileToDownload = serverFilesTable.getSelectionModel().getSelectedItem();
-        try{
-        userNetwork.downloadFileFromServer(fileToDownload);
-        } catch (IOException e){
-            System.out.println("Произошла ошибка при скачивании файла!");
-        }
-    }
-    @FXML
-    public void pressServerRefreshButton(ActionEvent event) throws IOException {
-        initListInServerTableView();
-    }
-    @FXML
-    public void pressLocalRefreshButton(ActionEvent event) throws IOException {
-        localFilesTable.getItems().removeAll(clientFiles);
-        checkLocalDirectory();
-        initListInLocalTableView();
+    public void pressSendButton(ActionEvent event) throws IOException {
+        FilePacket fileToSend = localFilesTable.getSelectionModel().getSelectedItem();
+        serverFiles.add(fileToSend);
+        userNetwork.sendFileToServer(fileToSend);
+        pressLocalRefreshButton();
     }
     @FXML
     public void pressLocalDeleteButton(ActionEvent event) throws IOException {
         FilePacket fileToDownload = localFilesTable.getSelectionModel().getSelectedItem();
         Files.delete(fileToDownload.getFile().toPath());
         clientFiles.remove(fileToDownload);
-        localFilesTable.getColumns().remove(fileToDownload);
+        pressLocalRefreshButton();
     }
-    public void setUserNetwork(UserNetwork userNetwork){
-        this.userNetwork = userNetwork;
+    @FXML
+    public void pressLocalRefreshButton(ActionEvent event) {
+        pressLocalRefreshButton();
     }
-    public void startConnection() {
+    private void pressLocalRefreshButton(){
+        localFilesTable.getItems().removeAll(clientFiles);
+        checkLocalDirectory();
+        initListInLocalTableView();
+    }
+    @FXML
+    public void pressDownloadButton(ActionEvent event){
+        FilePacket fileToDownload = serverFilesTable.getSelectionModel().getSelectedItem();
+        userNetwork.downloadFileFromServer(fileToDownload);
+    }
+    @FXML
+    public void pressServerDeleteButton(ActionEvent event) {
+        FilePacket fileToDelete = serverFilesTable.getSelectionModel().getSelectedItem();
+        userNetwork.deleteFileFromServer(fileToDelete);
+        pressServerRefreshButton();
+    }
+    @FXML
+    public void pressServerRefreshButton(ActionEvent event) throws IOException {
+    pressServerRefreshButton();
+    }
+    private void pressServerRefreshButton(){
+        serverFilesTable.getItems().removeAll(serverFiles);
+        userNetwork.refreshFilesFromServer();
+    }
+    //________________________________________________________//
+    void startConnection() {
         checkLocalDirectory();
         initListInLocalTableView();
         userNetwork.setController(this);
@@ -86,26 +99,29 @@ public class FXMLMainController {
             }
         }
     }
-    public void initListInLocalTableView(){
+    void initListInLocalTableView(){
         localFileName.setCellValueFactory(new PropertyValueFactory<>("fileName"));
         localFileLength.setCellValueFactory(new PropertyValueFactory<>("fileLength"));
         localFilesTable.setItems(clientFiles);
     }
-    public void initListInServerTableView(){
+    void initListInServerTableView(){
         serverFileName.setCellValueFactory(new PropertyValueFactory<>("fileName"));
         serverFileLength.setCellValueFactory(new PropertyValueFactory<>("fileLength"));
         serverFilesTable.setItems(serverFiles);
     }
 
-    public UserNetwork getUserNetwork() {
+    UserNetwork getUserNetwork() {
         return userNetwork;
     }
 
-    public ObservableList<FilePacket> getClientFiles() {
+    ObservableList<FilePacket> getClientFiles() {
         return clientFiles;
     }
 
-    public ObservableList<FilePacket> getServerFiles() {
+    ObservableList<FilePacket> getServerFiles() {
         return serverFiles;
+    }
+    void setUserNetwork(UserNetwork userNetwork){
+        this.userNetwork = userNetwork;
     }
 }
