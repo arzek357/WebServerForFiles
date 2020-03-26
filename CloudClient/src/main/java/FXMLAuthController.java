@@ -47,7 +47,7 @@ public class FXMLAuthController {
         }
     }
     @FXML
-    public void clearTextBoxes(){
+    private void clearTextBoxes(){
         textBox1.clear();
         textBox2.clear();
     }
@@ -56,7 +56,7 @@ public class FXMLAuthController {
         connection = DriverManager.getConnection("jdbc:sqlite:CloudClient\\src\\main\\resources\\auth.db");
         statement=connection.createStatement();
     }
-    public void checkAuth() throws SQLException {
+    private void checkAuth() throws SQLException {
         ResultSet rs = statement.executeQuery("SELECT * FROM ENTER");
         while (rs.next()){
             if (textBox1.getText().equals(rs.getString("LOGIN"))&&textBox2.getText().equals(rs.getString("PASS"))){

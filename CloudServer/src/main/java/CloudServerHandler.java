@@ -7,7 +7,6 @@ import java.io.File;
 import java.nio.file.Files;
 
 public class CloudServerHandler  extends ChannelInboundHandlerAdapter {
-    private ObservableList<FilePacket> serverFiles = FXCollections.observableArrayList();
     private String userName;
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -24,16 +23,26 @@ public class CloudServerHandler  extends ChannelInboundHandlerAdapter {
         System.out.println(msg.getClass().toString());
         if (msg instanceof RequestPacket){
             userName = ((RequestPacket) msg).getUserName();
-            System.out.println("К серверу подключился пользователь "+userName);
             checkServerDirectoryAndSendInfo(userName,ctx);
         }
         if (msg instanceof SendPacket){
-            for (FilePacket s:serverFiles){
-                if (s.getFileName().toString().equals(((SendPacket) msg).getFileName())){
-                    ((SendPacket) msg).setFileByteArr(Files.readAllBytes(s.getFile().toPath()));
+            if(((SendPacket) msg).getFileByteArr()==null){
+                File potentialFile = new File("CloudServer\\src\\main\\resources\\"+userName+"\\"+((SendPacket) msg).getFileName());
+                if (potentialFile.exists()){
+                    ((SendPacket) msg).setFileByteArr(Files.readAllBytes(potentialFile.toPath()));
+                    ctx.writeAndFlush(msg);
                 }
             }
-            ctx.writeAndFlush(msg);
+            else {
+                File potentialFile = new File("CloudServer\\src\\main\\resources\\" + userName + "\\" + ((SendPacket) msg).getFileName());
+                Files.write(potentialFile.toPath(), ((SendPacket) msg).getFileByteArr());
+            }
+        }
+        if (msg instanceof InstructionForServer){
+            File potentialFile = new File("CloudServer\\src\\main\\resources\\" + userName + "\\"+((InstructionForServer) msg).getFileName());
+            if (((InstructionForServer) msg).getActionCode().equals("delete")){
+                potentialFile.delete();
+            }
         }
     }
 
@@ -49,25 +58,16 @@ public class CloudServerHandler  extends ChannelInboundHandlerAdapter {
         else {
             File[] arrFiles = file.listFiles();
             if (arrFiles!=null){
-                for (File k:arrFiles){
-                    serverFiles.add(new FilePacket(k));
-                }
-            updateInfoAboutServerDirectory(userName,ctx);
+            ctx.writeAndFlush(new RequestPacket(userName,arrFiles));
             }
             else{
                 return;
             }
         }
     }
-    private void updateInfoAboutServerDirectory(String userName,ChannelHandlerContext ctx){
-        ctx.writeAndFlush(serverFiles.size());
-        for (FilePacket s: serverFiles){
-            ctx.writeAndFlush(new RequestPacket(userName,s.getFileName().toString(),s.getFile().toString(),s.getFileLength()));
-        }
-    }
-
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         super.exceptionCaught(ctx, cause);
+        cause.printStackTrace();
     }
 }
