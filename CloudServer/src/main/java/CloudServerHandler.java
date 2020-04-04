@@ -1,7 +1,5 @@
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -43,6 +41,20 @@ public class CloudServerHandler  extends ChannelInboundHandlerAdapter {
             if (((InstructionForServer) msg).getActionCode().equals("delete")){
                 potentialFile.delete();
             }
+        }
+        if (msg instanceof AuthPacket){
+            switch (((AuthPacket) msg).getFunctionOfPacket()){
+                case ("log"):
+                    if(BDWorker.checkAuth(((AuthPacket) msg).getUserName(),((AuthPacket) msg).getPass())){
+                        ((AuthPacket) msg).setPass("true");
+                    }
+                case ("reg"):
+                    if(BDWorker.regRequest(((AuthPacket) msg).getUserName(),((AuthPacket) msg).getPass())){
+                        ((AuthPacket) msg).setUserName("true");
+                    }
+                    break;
+            }
+            ctx.writeAndFlush(msg);
         }
     }
 

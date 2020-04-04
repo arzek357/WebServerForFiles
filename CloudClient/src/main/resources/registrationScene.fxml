@@ -19,9 +19,9 @@
             <PasswordField fx:id="textBox2"/>
          </children>
       </VBox>
-      <Button fx:id="enterButton" layoutX="200.0" layoutY="65.0" mnemonicParsing="false" prefHeight="27.0" prefWidth="90.0" text="Вход" onAction="#button1press" />
-      <Button fx:id="registrationButton" layoutX="200.0" layoutY="107.0" mnemonicParsing="false" prefHeight="27.0" prefWidth="90.0" text="Регистрация" onAction="#button2press"/>
-      <Label layoutX="11.0" layoutY="14.0" text="Авторизация в файловой системе">
+      <Button fx:id="registrationButton" layoutX="200.0" layoutY="65.0" mnemonicParsing="false" prefHeight="27.0" prefWidth="90.0" text="Регистрация" onAction="#pressRegButton"/>
+      <Button fx:id="enterButton" layoutX="200.0" layoutY="107.0" mnemonicParsing="false" prefHeight="27.0" prefWidth="90.0" text="Выход" onAction="#pressExitButton"/>
+      <Label layoutX="11.0" layoutY="14.0" text="Регистрация">
          <font>
             <Font size="18.0" />
          </font>
