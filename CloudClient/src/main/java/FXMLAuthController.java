@@ -1,33 +1,33 @@
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
+import java.io.IOException;
 import java.sql.*;
 
 public class FXMLAuthController {
+    private UserNetwork userNetwork;
     private Stage primaryStage;
     private Scene nextScene;
-    private Connection connection;
-    private Statement statement;
     private FXMLMainController mainController;
-    private boolean authStatus = false;
     public FXMLAuthController(Stage primaryStage,Scene nextScene,FXMLMainController mainController) {
         this.primaryStage=primaryStage;
         this.nextScene = nextScene;
         this.mainController = mainController;
-        try {
-            connectionToDb();
-        } catch (SQLException e){
-            e.printStackTrace();
-            System.out.println("Невозможно подключиться к базе данных!");
-        } catch (ClassNotFoundException e){
-            e.printStackTrace();
-            System.out.println("Отсутствует драйвер для подключения к базе данных!");
-        }
+        //Создаем класс сети с гостевым именем
+        userNetwork = new UserNetwork("guest");
+        userNetwork.setMainController(mainController);
+        mainController.setUserNetwork(userNetwork);
+        //Запускаем класс сети (определяем потоки ввода/вывода и коннектим сокет)
+        userNetwork.connect();
     }
     @FXML
     private Label loginLabel;
@@ -40,6 +40,7 @@ public class FXMLAuthController {
     @FXML
     public void button1press(ActionEvent event) {
         try{
+            //Запускаем процедуру аутентификации
         checkAuth();
         } catch (SQLException e){
             e.printStackTrace();
@@ -47,31 +48,29 @@ public class FXMLAuthController {
         }
     }
     @FXML
+    public void button2press(ActionEvent event) {
+        //Запускаем окно регистрации
+        primaryStage.hide();
+        try{
+        createRegistrationWindow();
+        } catch (IOException e){
+            System.out.println("Ошибка при запуске формы регистрации.");
+            e.printStackTrace();
+        }
+    }
+    @FXML
     private void clearTextBoxes(){
         textBox1.clear();
         textBox2.clear();
     }
-    private void connectionToDb() throws ClassNotFoundException, SQLException {
-        Class.forName("org.sqlite.JDBC");
-        connection = DriverManager.getConnection("jdbc:sqlite:CloudClient\\src\\main\\resources\\auth.db");
-        statement=connection.createStatement();
-    }
     private void checkAuth() throws SQLException {
-        ResultSet rs = statement.executeQuery("SELECT * FROM ENTER");
-        while (rs.next()){
-            if (textBox1.getText().equals(rs.getString("LOGIN"))&&textBox2.getText().equals(rs.getString("PASS"))){
-                authStatus=true;
-                mainController.setUserNetwork(new UserNetwork(rs.getString("LOGIN")));
-            }
-        }
-        if (authStatus){
+        //Отправляем с помощью класса нашей сети пакет, содержащий логин и пароль, и выбираем действие в зависимости от ответа.
+        if (userNetwork.sendAuthInfo(new AuthPacket(textBox1.getText(),textBox2.getText(),"log"))){
             System.out.println("Hello!");
-            mainController.startConnection();
+            mainController.start();
             primaryStage.setScene(nextScene);
             primaryStage.setTitle("Сетевое хранилище");
-            disconnectFromDB();
-        }
-        else {
+        } else {
             Alert alert = new Alert(Alert.AlertType.ERROR,"Доступ закрыт! Проверьте правильность введенных данных.");
             alert.setTitle("Ошибка");
             alert.setHeaderText(null);
@@ -79,7 +78,14 @@ public class FXMLAuthController {
             clearTextBoxes();
         }
     }
-    private void disconnectFromDB() throws SQLException {
-        connection.close();
+    private void createRegistrationWindow() throws IOException {
+            Stage stage = new Stage();
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("registrationScene.fxml"));
+            fxmlLoader.setController(new FXMLRegistrationController(primaryStage,stage,userNetwork));
+            Parent root = fxmlLoader.load();
+            Scene scene = new Scene(root);
+            stage.setScene(scene);
+            stage.setTitle("Окно регистрации");
+            stage.show();
     }
 }

@@ -17,6 +17,4 @@
         <module>CloudCommon</module>
         <module>CloudServer</module>
     </modules>
-
-
 </project>

@@ -73,11 +73,10 @@ public class FXMLMainController {
         userNetwork.refreshFilesFromServer();
     }
     //________________________________________________________//
-    void startConnection() {
+    void start() {
+        userNetwork.sendWelcomeMessage();
         checkLocalDirectory();
         initListInLocalTableView();
-        userNetwork.setController(this);
-        userNetwork.connect();
     }
     private void checkLocalDirectory() {
         File file = new File("CloudClient\\src\\main\\resources\\"+userNetwork.getUserName());

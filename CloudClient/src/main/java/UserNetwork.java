@@ -1,6 +1,6 @@
+import com.sun.xml.internal.ws.api.model.wsdl.WSDLOutput;
 import io.netty.handler.codec.serialization.ObjectDecoderInputStream;
 import io.netty.handler.codec.serialization.ObjectEncoderOutputStream;
-import javafx.collections.ObservableList;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,8 +9,8 @@ import java.nio.file.Files;
 
 
 public class UserNetwork {
-    private final String userName;
-    private FXMLMainController controller;
+    private String userName;
+    private FXMLMainController mainController;
     private Socket socket;
     private ObjectEncoderOutputStream oeos;
     private ObjectDecoderInputStream odis;
@@ -25,47 +25,41 @@ public class UserNetwork {
 
     public void connect() {
         determineSocketAndStreams();
-        startReadingThread();
     }
     private void determineSocketAndStreams(){
         try {
             socket = new Socket("localhost", 8189);
             oeos = new ObjectEncoderOutputStream(socket.getOutputStream());
             odis = new ObjectDecoderInputStream(socket.getInputStream(), 100 * 1024 * 1024);
+            System.out.println("Подключение к серверу произошло успешно. Сетевое соединение открыто.");
         } catch (IOException e){
             System.out.println("Невозможно подключиться к серверу!");
         }
     }
     private void startReadingThread(){
-        Thread readThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    RequestPacket userInfoPacket = new RequestPacket(userName);
-                    oeos.writeObject(userInfoPacket);
-                    oeos.flush();
-                    while (true) {
-                        Object msg = odis.readObject();
-                        if (msg instanceof SendPacket) {
-                            File clientFile = new File("CloudClient\\src\\main\\resources\\" + userName + "\\" + ((SendPacket) msg).getFileName());
-                            Files.write(clientFile.toPath(), ((SendPacket) msg).getFileByteArr());
-                            controller.getClientFiles().add(new FilePacket(clientFile));
-                            controller.initListInLocalTableView();
-                        }
-                        if (msg instanceof RequestPacket){
-                            controller.getServerFiles().removeAll();
-                            for (File s:((RequestPacket) msg).getFiles()){
-                                controller.getServerFiles().add(new FilePacket(s));
-                            }
-                            controller.initListInServerTableView();
-                        }
+        Thread readThread = new Thread(() -> {
+            try {
+                while (true) {
+                    Object msg = odis.readObject();
+                    if (msg instanceof SendPacket) {
+                        File clientFile = new File("CloudClient\\src\\main\\resources\\" + userName + "\\" + ((SendPacket) msg).getFileName());
+                        Files.write(clientFile.toPath(), ((SendPacket) msg).getFileByteArr());
+                        mainController.getClientFiles().add(new FilePacket(clientFile));
+                        mainController.initListInLocalTableView();
                     }
-                } catch (IOException e){
-                    System.out.println("Поток чтения прекратил свою работу в связи с разрывом соединения");
-                } catch (ClassNotFoundException e){
-                    System.out.println("Ошибка чтения данных сервера");
-                    e.printStackTrace();
+                    if (msg instanceof RequestPacket){
+                        mainController.getServerFiles().removeAll();
+                        for (File s:((RequestPacket) msg).getFiles()){
+                            mainController.getServerFiles().add(new FilePacket(s));
+                        }
+                        mainController.initListInServerTableView();
+                    }
                 }
+            } catch (IOException e){
+                System.out.println("Поток чтения прекратил свою работу в связи с разрывом соединения");
+            } catch (ClassNotFoundException e){
+                System.out.println("Ошибка чтения данных сервера");
+                e.printStackTrace();
             }
         });
         try {
@@ -77,11 +71,22 @@ public class UserNetwork {
         readThread.setDaemon(true);
         readThread.start();
     }
-    void setController(FXMLMainController controller) {
-        this.controller = controller;
+    void setMainController(FXMLMainController mainController) {
+        this.mainController = mainController;
     }
     void disconnect(){
-        disconnect(socket,oeos,odis);
+       disconnect(socket,oeos,odis);
+        System.out.println("Приложение закончило свою работу. Сетевое соединение закрыто.");
+    }
+
+    void sendWelcomeMessage(){
+        try{
+        RequestPacket userInfoPacket = new RequestPacket(userName);
+        oeos.writeObject(userInfoPacket);
+        oeos.flush();
+        } catch (IOException e){
+            System.out.println("Ошибка при отправке идентифицирующего пакета.");
+        }
     }
     private void disconnect(Socket socket,ObjectEncoderOutputStream oeos,ObjectDecoderInputStream odis) {
         try{
@@ -128,5 +133,26 @@ public class UserNetwork {
             System.out.println("Произошла ошибка при отправке файла "+file.getFileName().toString());
             e.printStackTrace();
         }
+    }
+    boolean sendAuthInfo(AuthPacket authPacket){
+        try {
+            oeos.writeObject(authPacket);
+            oeos.flush();
+            AuthPacket msg = (AuthPacket) odis.readObject();
+            if (msg.getPass().equals("true")){
+                userName = msg.getUserName();
+                startReadingThread();
+                return true;
+            }
+            if (msg.getUserName().equals("true")){
+                return true;
+            }
+        } catch (IOException e){
+            System.out.println("Произошла ошибка во время отправки аутентификационных данных!");
+            e.printStackTrace();
+        } catch (ClassNotFoundException e){
+            e.printStackTrace();
+        }
+        return false;
     }
 }
