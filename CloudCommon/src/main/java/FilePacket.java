@@ -15,13 +15,6 @@ public class FilePacket implements Serializable {
     fileLength=file.length();
     findFileName();
     }
-
-    public FilePacket(String fileName, long fileLength, String fullPath) {
-        this.fileName = Paths.get(fileName);
-        this.fileLength = fileLength;
-        this.fullPath = new File(fullPath);
-    }
-
     public File getFile() {
         return fullPath;
     }

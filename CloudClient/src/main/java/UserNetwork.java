@@ -49,6 +49,7 @@ public class UserNetwork {
                         mainController.initListInLocalTableView();
                     }
                     if (msg instanceof RequestPacket){
+                        mainController.getServerFilesTable().getItems().removeAll(mainController.getServerFiles());
                         mainController.getServerFiles().removeAll();
                         for (File s:((RequestPacket) msg).getFiles()){
                             mainController.getServerFiles().add(new FilePacket(s));
