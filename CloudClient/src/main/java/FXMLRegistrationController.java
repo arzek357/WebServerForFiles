@@ -1,7 +1,6 @@
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
-import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 
@@ -36,20 +35,24 @@ public class FXMLRegistrationController {
         textBox1.clear();
         textBox2.clear();
     }
+    //Метод, проверяющий правильность предложенных данных для регистрации и формирующий запрос на регистрацию через класс UserNetwork
     private void registrationRequest(String login,String pass){
         Pattern pattern = Pattern.compile("["+"a-zA-Z"+"\\d"+"]" +"*");
         Matcher loginMatcher = pattern.matcher(login);
         Matcher passMatcher = pattern.matcher(pass);
         if (loginMatcher.matches()&&passMatcher.matches()&&pass.length()>=5){
+            //Если все условия к данным для регистрации соблюдены, то формируем запрос
             if (userNetwork.sendAuthInfo(new AuthPacket(login,pass,"reg"))){
+                //Получили подтверждение сервера о регистрации, уведомляем пользователя
                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION,"Регистрация прошла успешно!");
-                alert.setTitle("Уведолмение");
+                alert.setTitle("Уведомление");
                 alert.setHeaderText(null);
                 alert.showAndWait();
                 registrationStage.close();
                 primaryStage.show();
             }
             else{
+                //Получили ответ от сервера, но подтверждения не было, значит такой пользователь уже есть
                 Alert alert = new Alert(Alert.AlertType.INFORMATION,"Пользователь с таким логином уже зарегистрирован. Попробуйте снова.");
                 alert.setTitle("Уведомление");
                 alert.setHeaderText(null);
@@ -58,6 +61,7 @@ public class FXMLRegistrationController {
             }
         }
         else {
+            //Данные для регистрации не подошли под условия
             Alert alert = new Alert(Alert.AlertType.WARNING,"Ошибка регистрации! Логин и пароль должны состоять из букв латинского алфавита и цифр. Пароль должен иметь длину не менее 5 символов.");
             alert.setTitle("Ошибка");
             alert.setHeaderText(null);

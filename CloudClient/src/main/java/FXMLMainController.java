@@ -35,7 +35,7 @@ public class FXMLMainController {
         FilePacket fileToSend = localFilesTable.getSelectionModel().getSelectedItem();
         serverFiles.add(fileToSend);
         userNetwork.sendFileToServer(fileToSend);
-        pressLocalRefreshButton();
+        pressServerRefreshButton();
     }
     @FXML
     public void pressLocalDeleteButton(ActionEvent event) throws IOException {
@@ -62,7 +62,8 @@ public class FXMLMainController {
     public void pressServerDeleteButton(ActionEvent event) {
         FilePacket fileToDelete = serverFilesTable.getSelectionModel().getSelectedItem();
         userNetwork.deleteFileFromServer(fileToDelete);
-        pressServerRefreshButton();
+        serverFiles.remove(fileToDelete);
+        initListInServerTableView();
     }
     @FXML
     public void pressServerRefreshButton(ActionEvent event) throws IOException {
@@ -73,11 +74,13 @@ public class FXMLMainController {
         userNetwork.refreshFilesFromServer();
     }
     //________________________________________________________//
+    //Метод, вкючающий в себя стандартный набор методов при переходе пользователя на основное окно приложения
     void start() {
         userNetwork.sendWelcomeMessage();
         checkLocalDirectory();
         initListInLocalTableView();
     }
+    //Метод, проверяющий файлы в локальном хранилище и заполняющий ими коллекцию, при отсутствии хранилища пользователя, создает его
     private void checkLocalDirectory() {
         File file = new File("CloudClient\\src\\main\\resources\\"+userNetwork.getUserName());
         if (!file.exists()){
@@ -98,11 +101,13 @@ public class FXMLMainController {
             }
         }
     }
+    //Метод, заполняющий таблицу значениями из коллекции, принадлежащей файлам на клиентской стороне
     void initListInLocalTableView(){
         localFileName.setCellValueFactory(new PropertyValueFactory<>("fileName"));
         localFileLength.setCellValueFactory(new PropertyValueFactory<>("fileLength"));
         localFilesTable.setItems(clientFiles);
     }
+    //Метод, заполняющий таблицу значениями из коллекции, принадлежащей файлам на серверной стороне
     void initListInServerTableView(){
         serverFileName.setCellValueFactory(new PropertyValueFactory<>("fileName"));
         serverFileLength.setCellValueFactory(new PropertyValueFactory<>("fileLength"));

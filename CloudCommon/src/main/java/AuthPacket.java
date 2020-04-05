@@ -3,11 +3,11 @@ import java.io.Serializable;
 public class AuthPacket implements Serializable {
     private String userName;
     private String pass;
-    private String functionOfPacket;
-    public AuthPacket(String userName,String pass,String functionOfPacket){
+    private String actionCode;
+    public AuthPacket(String userName,String pass,String actionCode){
         this.pass=pass;
         this.userName=userName;
-        this.functionOfPacket = functionOfPacket;
+        this.actionCode = actionCode;
     }
     public String getUserName() {
         return userName;
@@ -18,8 +18,8 @@ public class AuthPacket implements Serializable {
     public void setPass(String pass) {
         this.pass = pass;
     }
-    public String getFunctionOfPacket() {
-        return functionOfPacket;
+    public String getActionCode() {
+        return actionCode;
     }
     public void setUserName(String userName) {
         this.userName = userName;

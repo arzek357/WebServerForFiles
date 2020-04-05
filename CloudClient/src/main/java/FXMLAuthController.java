@@ -1,5 +1,4 @@
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -8,10 +7,8 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
 
 import java.io.IOException;
-import java.sql.*;
 
 public class FXMLAuthController {
     private UserNetwork userNetwork;
@@ -39,13 +36,8 @@ public class FXMLAuthController {
     private TextField textBox2;
     @FXML
     public void button1press(ActionEvent event) {
-        try{
-            //Запускаем процедуру аутентификации
+        //Запускаем процедуру аутентификации
         checkAuth();
-        } catch (SQLException e){
-            e.printStackTrace();
-            System.out.println("Невозможно подключиться к базе данных!");
-        }
     }
     @FXML
     public void button2press(ActionEvent event) {
@@ -63,7 +55,7 @@ public class FXMLAuthController {
         textBox1.clear();
         textBox2.clear();
     }
-    private void checkAuth() throws SQLException {
+    private void checkAuth(){
         //Отправляем с помощью класса нашей сети пакет, содержащий логин и пароль, и выбираем действие в зависимости от ответа.
         if (userNetwork.sendAuthInfo(new AuthPacket(textBox1.getText(),textBox2.getText(),"log"))){
             System.out.println("Hello!");
