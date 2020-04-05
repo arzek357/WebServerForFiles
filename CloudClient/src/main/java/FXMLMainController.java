@@ -31,9 +31,8 @@ public class FXMLMainController {
     private TableColumn<FilePacket,Long> serverFileLength;
 
     @FXML
-    public void pressSendButton(ActionEvent event) throws IOException {
+    public void pressSendButton(ActionEvent event) {
         FilePacket fileToSend = localFilesTable.getSelectionModel().getSelectedItem();
-        serverFiles.add(fileToSend);
         userNetwork.sendFileToServer(fileToSend);
         pressServerRefreshButton();
     }
@@ -66,11 +65,10 @@ public class FXMLMainController {
         initListInServerTableView();
     }
     @FXML
-    public void pressServerRefreshButton(ActionEvent event) throws IOException {
+    public void pressServerRefreshButton(ActionEvent event) {
     pressServerRefreshButton();
     }
     private void pressServerRefreshButton(){
-        serverFilesTable.getItems().removeAll(serverFiles);
         userNetwork.refreshFilesFromServer();
     }
     //________________________________________________________//
@@ -127,5 +125,9 @@ public class FXMLMainController {
     }
     void setUserNetwork(UserNetwork userNetwork){
         this.userNetwork = userNetwork;
+    }
+
+    public TableView<FilePacket> getServerFilesTable() {
+        return serverFilesTable;
     }
 }
