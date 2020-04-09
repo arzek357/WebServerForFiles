@@ -14,9 +14,9 @@
       <VBox layoutX="11.0" layoutY="50" prefHeight="71.0" prefWidth="168.0">
          <children>
             <Label fx:id="loginLabel" text="Login"/>
-            <TextField fx:id="textBox1"/>
+            <TextField fx:id="textField1"/>
             <Label fx:id="passLabel" text="Password"/>
-            <PasswordField fx:id="textBox2"/>
+            <PasswordField fx:id="textField2"/>
          </children>
       </VBox>
       <Button fx:id="registrationButton" layoutX="200.0" layoutY="65.0" mnemonicParsing="false" prefHeight="27.0" prefWidth="90.0" text="Регистрация" onAction="#pressRegButton"/>

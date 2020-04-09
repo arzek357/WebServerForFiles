@@ -18,12 +18,12 @@ public class FXMLRegistrationController {
         this.userNetwork=userNetwork;
     }
     @FXML
-    private TextField textBox1;
+    private TextField textField1;
     @FXML
-    private TextField textBox2;
+    private TextField textField2;
     @FXML
     public void pressRegButton(ActionEvent event) {
-    registrationRequest(textBox1.getText(),textBox2.getText());
+    registrationRequest(textField1.getText(), textField2.getText());
     }
     @FXML
     public void pressExitButton(ActionEvent event) {
@@ -32,8 +32,8 @@ public class FXMLRegistrationController {
     }
     @FXML
     private void clearTextBoxes(){
-        textBox1.clear();
-        textBox2.clear();
+        textField1.clear();
+        textField2.clear();
     }
     //Метод, проверяющий правильность предложенных данных для регистрации и формирующий запрос на регистрацию через класс UserNetwork
     private void registrationRequest(String login,String pass){

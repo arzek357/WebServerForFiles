@@ -34,14 +34,13 @@ public class FXMLMainController {
     public void pressSendButton(ActionEvent event) {
         FilePacket fileToSend = localFilesTable.getSelectionModel().getSelectedItem();
         userNetwork.sendFileToServer(fileToSend);
-        pressServerRefreshButton();
     }
     @FXML
     public void pressLocalDeleteButton(ActionEvent event) throws IOException {
-        FilePacket fileToDownload = localFilesTable.getSelectionModel().getSelectedItem();
-        Files.delete(fileToDownload.getFile().toPath());
-        clientFiles.remove(fileToDownload);
-        pressLocalRefreshButton();
+        FilePacket fileToDelete = localFilesTable.getSelectionModel().getSelectedItem();
+        Files.delete(fileToDelete.getFile().toPath());
+        clientFiles.remove(fileToDelete);
+        initListInLocalTableView();
     }
     @FXML
     public void pressLocalRefreshButton(ActionEvent event) {
@@ -61,8 +60,6 @@ public class FXMLMainController {
     public void pressServerDeleteButton(ActionEvent event) {
         FilePacket fileToDelete = serverFilesTable.getSelectionModel().getSelectedItem();
         userNetwork.deleteFileFromServer(fileToDelete);
-        serverFiles.remove(fileToDelete);
-        initListInServerTableView();
     }
     @FXML
     public void pressServerRefreshButton(ActionEvent event) {
@@ -100,13 +97,13 @@ public class FXMLMainController {
         }
     }
     //Метод, заполняющий таблицу значениями из коллекции, принадлежащей файлам на клиентской стороне
-    void initListInLocalTableView(){
+    private void initListInLocalTableView(){
         localFileName.setCellValueFactory(new PropertyValueFactory<>("fileName"));
         localFileLength.setCellValueFactory(new PropertyValueFactory<>("fileLength"));
         localFilesTable.setItems(clientFiles);
     }
     //Метод, заполняющий таблицу значениями из коллекции, принадлежащей файлам на серверной стороне
-    void initListInServerTableView(){
+    private void initListInServerTableView(){
         serverFileName.setCellValueFactory(new PropertyValueFactory<>("fileName"));
         serverFileLength.setCellValueFactory(new PropertyValueFactory<>("fileLength"));
         serverFilesTable.setItems(serverFiles);
@@ -115,11 +112,9 @@ public class FXMLMainController {
     UserNetwork getUserNetwork() {
         return userNetwork;
     }
-
     ObservableList<FilePacket> getClientFiles() {
         return clientFiles;
     }
-
     ObservableList<FilePacket> getServerFiles() {
         return serverFiles;
     }
@@ -127,7 +122,23 @@ public class FXMLMainController {
         this.userNetwork = userNetwork;
     }
 
-    public TableView<FilePacket> getServerFilesTable() {
-        return serverFilesTable;
+    void updateServerFilesAfterRequest(RequestPacket msg){
+        serverFilesTable.getItems().removeAll(serverFiles);
+        serverFiles.removeAll();
+         for (File s: msg.getFiles()){
+             serverFiles.add(new FilePacket(s));
+         }
+         initListInServerTableView();
+    }
+    void updateLocalFilesAfterDownload(SendPacket msg){
+        File writeFile = CopyFileModule.checkFileAndBackUniName(new File("CloudClient\\src\\main\\resources\\" + userNetwork.getUserName() + "\\" + (msg.getFileName())));
+        try{
+        Files.write(writeFile.toPath(), msg.getFileByteArr());
+        } catch (IOException e){
+            System.out.println("Ошибка при скачивании файла с сервера.");
+            e.printStackTrace();
+        }
+        clientFiles.add(new FilePacket(writeFile));
+        initListInLocalTableView();
     }
 }

@@ -31,9 +31,9 @@ public class FXMLAuthController {
     @FXML
     private Label passLabel;
     @FXML
-    private TextField textBox1;
+    private TextField textField1;
     @FXML
-    private TextField textBox2;
+    private TextField textField2;
     @FXML
     public void button1press(ActionEvent event) {
         //Запускаем процедуру аутентификации
@@ -52,12 +52,12 @@ public class FXMLAuthController {
     }
     @FXML
     private void clearTextBoxes(){
-        textBox1.clear();
-        textBox2.clear();
+        textField1.clear();
+        textField2.clear();
     }
     private void checkAuth(){
         //Отправляем с помощью класса нашей сети пакет, содержащий логин и пароль, и выбираем действие в зависимости от ответа.
-        if (userNetwork.sendAuthInfo(new AuthPacket(textBox1.getText(),textBox2.getText(),"log"))){
+        if (userNetwork.sendAuthInfo(new AuthPacket(textField1.getText(), textField2.getText(),"log"))){
             System.out.println("Hello!");
             mainController.start();
             primaryStage.setScene(nextScene);

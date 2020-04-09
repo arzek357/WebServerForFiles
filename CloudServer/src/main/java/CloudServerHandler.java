@@ -22,7 +22,7 @@ public class CloudServerHandler  extends ChannelInboundHandlerAdapter {
         System.out.println("Был получен пакет типа "+msg.getClass().toString());
         if (msg instanceof RequestPacket){
             userName = ((RequestPacket) msg).getUserName();
-            checkServerDirectoryAndSendInfo(userName,ctx);
+            checkServerDirectoryAndSendInfo(ctx);
         }
         if (msg instanceof SendPacket){
             File potentialFile = new File("CloudServer\\src\\main\\resources\\"+userName+"\\"+((SendPacket) msg).getFileName());
@@ -36,6 +36,7 @@ public class CloudServerHandler  extends ChannelInboundHandlerAdapter {
                 case "send":
                     File writeFile = CopyFileModule.checkFileAndBackUniName(potentialFile);
                     Files.write(writeFile.toPath(), ((SendPacket) msg).getFileByteArr());
+                    checkServerDirectoryAndSendInfo(ctx);
                     break;
             }
         }
@@ -44,6 +45,7 @@ public class CloudServerHandler  extends ChannelInboundHandlerAdapter {
             switch (((InstructionForServer) msg).getActionCode()){
                 case "delete":
                 potentialFile.delete();
+                checkServerDirectoryAndSendInfo(ctx);
                 break;
             }
         }
@@ -68,7 +70,7 @@ public class CloudServerHandler  extends ChannelInboundHandlerAdapter {
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
         super.channelReadComplete(ctx);
     }
-    private void checkServerDirectoryAndSendInfo(String userName,ChannelHandlerContext ctx) {
+    private void checkServerDirectoryAndSendInfo(ChannelHandlerContext ctx) {
         File file = new File("CloudServer\\src\\main\\resources\\"+userName);
         if (!file.exists()){
             file.mkdirs();

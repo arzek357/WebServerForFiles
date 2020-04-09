@@ -1,7 +1,6 @@
 import io.netty.handler.codec.serialization.ObjectDecoderInputStream;
 import io.netty.handler.codec.serialization.ObjectEncoderOutputStream;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.file.Files;
@@ -43,18 +42,10 @@ public class UserNetwork {
                 while (true) {
                     Object msg = odis.readObject();
                     if (msg instanceof SendPacket) {
-                        File writeFile = CopyFileModule.checkFileAndBackUniName(new File("CloudClient\\src\\main\\resources\\" + userName + "\\" + ((SendPacket) msg).getFileName()));
-                        Files.write(writeFile.toPath(), ((SendPacket) msg).getFileByteArr());
-                        mainController.getClientFiles().add(new FilePacket(writeFile));
-                        mainController.initListInLocalTableView();
+                        mainController.updateLocalFilesAfterDownload((SendPacket) msg);
                     }
                     if (msg instanceof RequestPacket){
-                        mainController.getServerFilesTable().getItems().removeAll(mainController.getServerFiles());
-                        mainController.getServerFiles().removeAll();
-                        for (File s:((RequestPacket) msg).getFiles()){
-                            mainController.getServerFiles().add(new FilePacket(s));
-                        }
-                        mainController.initListInServerTableView();
+                        mainController.updateServerFilesAfterRequest((RequestPacket) msg);
                     }
                 }
             } catch (IOException e){
@@ -64,21 +55,22 @@ public class UserNetwork {
                 e.printStackTrace();
             }
         });
-        try {
-            readThread.join();
-        } catch (InterruptedException e){
-            System.out.println("Поток чтения был прерван.");
-            e.printStackTrace();
-        }
         readThread.setDaemon(true);
         readThread.start();
     }
     void setMainController(FXMLMainController mainController) {
         this.mainController = mainController;
     }
-    //Метод для вызова disconnect() из классов, не имеющих доступа к элементам сети
+    //Метод для вызова disconnect()
     void disconnect(){
-       disconnect(socket,oeos,odis);
+        try{
+            oeos.close();
+            odis.close();
+            socket.close();
+        } catch (IOException e){
+            System.out.println("При завершении работы сети произошла ошибка.");
+            e.printStackTrace();
+        }
         System.out.println("Приложение закончило свою работу. Сетевое соединение закрыто.");
     }
     //Метод для идентификации пользователя на сервере, отправляет пакет RequestPacket, в ответ получает информацию о файлах из серверного хранилища
@@ -89,17 +81,6 @@ public class UserNetwork {
         oeos.flush();
         } catch (IOException e){
             System.out.println("Ошибка при отправке идентифицирующего пакета.");
-            e.printStackTrace();
-        }
-    }
-    //Метод для правильного завершения работы сети
-    private void disconnect(Socket socket,ObjectEncoderOutputStream oeos,ObjectDecoderInputStream odis) {
-        try{
-            oeos.close();
-            odis.close();
-            socket.close();
-        } catch (IOException e){
-            System.out.println("При завершении работы сети произошла ошибка.");
             e.printStackTrace();
         }
     }
