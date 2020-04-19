@@ -32,5 +32,6 @@ public class AuthWindow extends Application {
         primaryStage.setScene(scene1);
         primaryStage.setTitle("Окно авторизации");
         primaryStage.show();
+        //тест гит
     }
 }
